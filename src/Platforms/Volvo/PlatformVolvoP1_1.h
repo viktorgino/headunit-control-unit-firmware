@@ -9,7 +9,9 @@ enum VolvoP1CanIDs{
     Car_Settings_Send = 0x08E2300E,
     Car_Settings_Receive = 0x0A90F608,
     AC_Settings = 0x12404002,
-    Environment_Sensor = 0x1E30104A
+    Environment_Sensor = 0x1E30104A,
+    Indicators = 0x02120498,
+    KeyPosition = 0x03C3F7FC
 };
 class Platform : public PlatformAbstract {
    public:

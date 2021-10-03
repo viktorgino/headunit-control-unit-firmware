@@ -8,9 +8,10 @@ Platform::Platform(HUDSerial::HUDSerial *hudSerial) : PlatformAbstract(hudSerial
       climateControl(),
       m_carSettings(),
       m_carSettingsReceived(),
+      m_bodyControlFrame(),
       m_ccLoaded(false),
       m_ccSettingsChanged(false),
-      m_carSettingsChanged(false) {    
+      m_carSettingsChanged(false){    
     canBus.setBaudRate(Bus_Can0, 125000);
     canBus.setBaudRate(Bus_Can1, 125000);
     canBus.setBaudRate(Bus_Can2, 125000);
@@ -262,10 +263,7 @@ void Platform::receiveBusMessage(BusNumber bus, BusMessage message) {
                 }
             } break;
             case Environment_Sensor : {
-                bool nightLight = (message.buf[5] &0b00111111) > 0x10;
-                bool leftIndex = (message.buf[1] &0b00001000);
-                bool rightIndex = (message.buf[1] &0b00010000);
-                bool reverse = (message.buf[0] &0b00010000);
+                bool nightLight = (message.buf[5] &0b00111111) < 0x10;
 
                 bool change = false;
 
@@ -273,6 +271,17 @@ void Platform::receiveBusMessage(BusNumber bus, BusMessage message) {
                     m_bodyControlFrame.NightLight = nightLight;
                     change = true;
                 }
+                if(change){
+                    m_hudSerial->sendBodyControlCommand(m_bodyControlFrame);
+                }
+            } break;
+            case Indicators : {
+                bool leftIndex = (message.buf[1] &0b00001000);
+                bool rightIndex = (message.buf[1] &0b00010000);
+                bool reverse = (message.buf[0] &0b00001000);
+
+                bool change = false;
+
                 if(m_bodyControlFrame.IndicatorLeft != leftIndex) {
                     m_bodyControlFrame.IndicatorLeft = leftIndex;
                     change = true;
@@ -285,9 +294,27 @@ void Platform::receiveBusMessage(BusNumber bus, BusMessage message) {
                     m_bodyControlFrame.Reversing = reverse;
                     change = true;
                 }
-                if(change = true){
+                if(change){
                     m_hudSerial->sendBodyControlCommand(m_bodyControlFrame);
                 }
+            } break;
+            case KeyPosition : {
+                uint8_t position = message.buf[5] & 0b00001111;
+                switch(position) {
+                    case 0x01 : //Key out
+                    break;
+                    case 0x02 : //Key in, pos 0
+                    break;
+                    case 0x04 : //Key in, pos 1
+                    break;
+                    case 0x06 : //Key in, pos 2
+                    break;
+                    case 0x07 : //Key in, pos 2, engine running
+                    break;
+                    case 0x08 : //Key in, pos 3, engine cranking
+                    break;
+                }
+
             } break;
             default:
                 break;
