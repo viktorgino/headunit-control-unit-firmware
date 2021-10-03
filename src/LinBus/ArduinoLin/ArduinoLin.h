@@ -26,7 +26,7 @@ private:
     int addressParity(uint8_t PID);
     bool checkAddressParity(uint8_t PID);
 
-    void validateMessage();
+    bool validateMessage();
     void errorMessage(const char * message, bool dumpMessage = false);
     void transmit();
     void receive();

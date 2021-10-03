@@ -107,17 +107,20 @@ void LinBus::transmit()
     }
 }
 
-void LinBus::validateMessage()
+bool LinBus::validateMessage()
 {
-    if(receivedMessage.len <= 0){
+    LPUART2_STAT |= LPUART_STAT_LBKDE;
+
+    if (receivedMessage.len <= 0)
+    {
 #ifdef DEBUG
         char buffer[MESSAGE_MAX_LENGTH];
         sprintf(buffer, "Emtpy message : %02x", receivedMessage.id);
         errorMessage(buffer);
 #endif
-        return;        
+        return false;
     }
-    LPUART2_STAT |= LPUART_STAT_LBKDE;
+
     uint8_t checksum = dataChecksum(receivedMessage.buf, receivedMessage.len, receivedMessage.id);
 
     if (!checkAddressParity(receivedMessage.id))
@@ -125,35 +128,42 @@ void LinBus::validateMessage()
 #ifdef DEBUG
         errorMessage("Invalid addr parity", true);
 #endif
-        return;
+        return false;
     }
 
     if (receivedMessage.checksum != checksum)
     {
 #ifdef DEBUG
-        errorMessage("Invalid checksum", true);
+        errorMessage("chcksum err", true);
 #endif
-        return;
+        return false;
     }
     receivedMessage.id &= 0b00111111;
     m_callback(receivedMessage);
+    return true;
 }
 
 void LinBus::receive()
 {
-    if (((LPUART2_STAT >> 31) & 1) == 1)
+    if (((LPUART2_STAT >> 31) & 1))
     // if (LPUART_STAT_LBKDIF & LPUART_STAT_LBKDIF)
     {
         LPUART2_STAT &= ~LPUART_STAT_LBKDE;
+
+        // if (receiveState == Data)
+        // {
+        //     if (receivedMessage.len > 2)
+        //     {
+        //         receivedMessage.checksum = receivedMessage.buf[receivedMessage.len - 1];
+        //         receivedMessage.len -= 1;
+        //         validateMessage();
+        //     }
+        // }
         receiveState = SyncField;
     }
 
     switch (receiveState)
     {
-    case FrameFinished:
-    {
-    }
-    break;
     case SyncField:
     {
         if (SERIAL_LIN1.available())
@@ -199,12 +209,14 @@ void LinBus::receive()
             {
                 receivedMessage.checksum = receivedMessage.buf[receivedMessage.len - 1];
                 receivedMessage.len -= 1;
-                validateMessage();
+                if(!validateMessage()){
+                    errorMessage("Data: Invalid checksum", true);                     
+                }
             }
             else
             {
 #ifdef DEBUG
-                errorMessage("Inter Byte Time out", true);
+                errorMessage("Data: Byte Time out", true);
 #endif
             }
 
@@ -226,25 +238,32 @@ void LinBus::receive()
         if (interFrameTimer > m_interFrameTime)
         {
 #ifdef DEBUG
-            errorMessage("Inter Byte Time out", true);
+            errorMessage("Checksum: Byte Time out", true);
 #endif
             receiveState = FrameFinished;
         }
         else if (SERIAL_LIN1.available())
         {
             receivedMessage.checksum = SERIAL_LIN1.read();
-            validateMessage();
+            if(!validateMessage()){
+                errorMessage("Checksum: Invalid checksum", true);                     
+            }
             receiveState = FrameFinished;
         }
     }
     break;
 
+    case FrameFinished :
+    break;
     default:
 #ifdef DEBUG
         errorMessage("Invalid receiver state");
 #endif
         receiveState = FrameFinished;
         break;
+    }
+    if(receiveState == FrameFinished){
+        LPUART2_STAT |= LPUART_STAT_LBKDE;
     }
 }
 
@@ -255,15 +274,16 @@ void LinBus::errorMessage(const char *message, bool dumpMessage)
     if (dumpMessage)
     {
         char bufferHex[32];
-        for (uint8_t i = 0; i < strlen((char *)receivedMessage.buf); i++)
+        for (uint8_t i = 0; i < receivedMessage.len; i++)
         {
             sprintf(&bufferHex[3 * i], "%02x ", receivedMessage.buf[i]);
         }
-        sprintf(buffer, "LIN 0 : %s : %02x (%02x) %s len : %d",
+        sprintf(buffer, "LIN 0 : %s : %02x (%02x) %s chksum : %02x len : %d",
                 message,
                 receivedMessage.id,
                 (receivedMessage.id & 0b00111111),
                 bufferHex,
+                receivedMessage.checksum,
                 receivedMessage.len);
     }
     else
@@ -279,8 +299,8 @@ void LinBus::loop()
     transmit();
     if (m_type == LIN_SLAVE)
     {
-        receive();
     }
+    receive();
 }
 
 bool LinBus::checkAddressParity(uint8_t PID) { return (PID == addressParity(PID & 0b00111111)); }
