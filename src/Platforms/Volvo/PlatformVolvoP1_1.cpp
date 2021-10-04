@@ -129,9 +129,9 @@ void Platform::receiveBusMessage(BusNumber bus, BusMessage message) {
 
                 if (message.buf[1] & 0b00010000) {      // Tune knob rotate
                     if (message.buf[3] & 0b10000000) {  // Tune up
-                        m_hudSerial->sendButtonInputCommand(Key_TuneUp);
+                        m_hudSerial->sendButtonInputCommand(Key_Next);
                     } else if (message.buf[2] & 0b00000001) {  // Tune down
-                        m_hudSerial->sendButtonInputCommand(Key_TuneDown);
+                        m_hudSerial->sendButtonInputCommand(Key_Previous);
                     }
                 }
 
