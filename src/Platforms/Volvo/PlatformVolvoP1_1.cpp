@@ -263,7 +263,7 @@ void Platform::receiveBusMessage(BusNumber bus, BusMessage message) {
                 }
             } break;
             case Environment_Sensor : {
-                bool nightLight = (message.buf[5] &0b00111111) < 0x10;
+                bool nightLight = (message.buf[5] &0b11111111) < 0x10;
 
                 bool change = false;
 
