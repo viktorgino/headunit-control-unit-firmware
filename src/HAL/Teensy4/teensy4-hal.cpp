@@ -18,6 +18,9 @@ void init() {
     #ifdef SERIAL_GVRET
         SERIAL_GVRET.begin(1000000);
     #endif
+    #ifdef SERIAL_DEBUG
+        SERIAL_DEBUG.begin(1000000);
+    #endif
 }
 void loop() {
     if(loop1msTimer > 0){

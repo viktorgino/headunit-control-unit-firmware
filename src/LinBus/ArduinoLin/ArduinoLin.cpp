@@ -1,5 +1,6 @@
 #include "ArduinoLin.h"
 
+#if defined(__IMXRT1062__)
 LinBus::LinBus(HardwareSerial serialPort, LinNodeType type, LinMessageCallback callback)
     : LinBusAbstract(serialPort, type, callback)
 {
@@ -330,3 +331,4 @@ uint8_t LinBus::dataChecksum(uint8_t *message, int length, uint8_t id)
 
     return ~ret;
 }
+#endif

@@ -5,5 +5,6 @@
 #include "LinBus/ArduinoLin/ArduinoLin.h"
 #endif
 
-
+#ifdef LINBUS
 extern LinBus linBus;
+#endif

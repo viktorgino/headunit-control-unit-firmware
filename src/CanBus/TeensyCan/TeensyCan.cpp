@@ -4,8 +4,11 @@
 CanBus::CanBus(CanMessageCallback callback) : CanBusAbstract(callback)
 {
     can0.begin();
+
+#if defined(__IMXRT1062__)
     can1.begin();
     can2.begin();
+#endif
 }
 
 void CanBus::setBaudRate(BusNumber bus, uint32_t speed)
@@ -14,6 +17,7 @@ void CanBus::setBaudRate(BusNumber bus, uint32_t speed)
     {
         can0.setBaudRate(speed);
     }
+#if defined(__IMXRT1062__)
     else if (bus == Bus_Can1)
     {
         can1.setBaudRate(speed);
@@ -22,13 +26,16 @@ void CanBus::setBaudRate(BusNumber bus, uint32_t speed)
     {
         can2.setBaudRate(speed);
     }
+#endif
 }
 
-uint32_t CanBus::getBaudRate(BusNumber bus) {
+uint32_t CanBus::getBaudRate(BusNumber bus)
+{
     if (bus == Bus_Can0)
     {
         return can0.getBaudRate();
     }
+#if defined(__IMXRT1062__)
     else if (bus == Bus_Can1)
     {
         return can1.getBaudRate();
@@ -37,6 +44,7 @@ uint32_t CanBus::getBaudRate(BusNumber bus) {
     {
         return can2.getBaudRate();
     }
+#endif
     return 0;
 }
 void CanBus::sendFrame(BusNumber bus, CanMessage &frame)
@@ -50,6 +58,7 @@ void CanBus::sendFrame(BusNumber bus, CanMessage &frame)
     {
         can0.write(msg);
     }
+#if defined(__IMXRT1062__)
     else if (bus == Bus_Can1)
     {
         can1.write(msg);
@@ -58,6 +67,7 @@ void CanBus::sendFrame(BusNumber bus, CanMessage &frame)
     {
         can2.write(msg);
     }
+#endif
     else
     {
 #if defined(DEBUG)
@@ -77,6 +87,7 @@ void CanBus::loop()
         msg.len = msg1.len;
         m_callback(Bus_Can0, msg);
     }
+#if defined(__IMXRT1062__)
     CAN_message_t msg2;
     if (can1.read(msg2))
     {
@@ -97,6 +108,7 @@ void CanBus::loop()
         msg.len = msg3.len;
         m_callback(Bus_Can2, msg);
     }
+#endif
 }
 
 #endif

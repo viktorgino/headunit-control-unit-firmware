@@ -63,7 +63,6 @@ void Platform::sendCarSettings() {
     message.buf[6] = m_carSettingsChanged << 7;                             // CEM Settings changed flag
     message.buf[7] = (m_carSettingsReceived.Bits[0] << 7) | autoBlower;     // Recirculation timer & auto blower
     canBus.sendFrame(Bus_Can0, message);
-    canBus.sendFrame(Bus_Can1, message);
 
     if (m_settingsTimerCount >= 4) {
         m_settingsTimerCount = 0;
@@ -78,11 +77,6 @@ void Platform::receiveBusMessage(BusNumber bus, BusMessage message) {
     canMessage.len = message.len;
     canMessage.id = message.id;
     canMessage.extended = message.id > 255;
-    if (bus == Bus_Can0) {
-        canBus.sendFrame(Bus_Can1, canMessage);
-    } else if (bus == Bus_Can1) {
-        canBus.sendFrame(Bus_Can0, canMessage);
-    }
 
     if (bus == Bus_Can0) {
         switch (message.id) {
@@ -129,9 +123,9 @@ void Platform::receiveBusMessage(BusNumber bus, BusMessage message) {
 
                 if (message.buf[1] & 0b00010000) {      // Tune knob rotate
                     if (message.buf[3] & 0b10000000) {  // Tune up
-                        m_hudSerial->sendButtonInputCommand(Key_Next);
+                        m_hudSerial->sendButtonInputCommand(Key_TuneUp);
                     } else if (message.buf[2] & 0b00000001) {  // Tune down
-                        m_hudSerial->sendButtonInputCommand(Key_Previous);
+                        m_hudSerial->sendButtonInputCommand(Key_TuneDown);
                     }
                 }
 
@@ -263,12 +257,12 @@ void Platform::receiveBusMessage(BusNumber bus, BusMessage message) {
                 }
             } break;
             case Environment_Sensor : {
-                bool nightLight = (message.buf[5] &0b11111111) < 0x10;
+                uint8_t externalBrightness = message.buf[5];
 
                 bool change = false;
 
-                if(m_bodyControlFrame.NightLight != nightLight) {
-                    m_bodyControlFrame.NightLight = nightLight;
+                if(m_bodyControlFrame.ExternalBrightness != externalBrightness) {
+                    m_bodyControlFrame.ExternalBrightness = externalBrightness;
                     change = true;
                 }
                 if(change){

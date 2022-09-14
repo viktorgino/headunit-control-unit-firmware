@@ -5,6 +5,7 @@
 #include "hal/hal.h"
 #include "../LinBus.h"
 
+#if defined(__IMXRT1062__)
 typedef enum LinReaderState {
   FrameFinished,
   SyncField,
@@ -40,3 +41,4 @@ private:
 
     uint32_t m_baudRate;
 };
+#endif

@@ -1,7 +1,13 @@
 #pragma once
 
-#include "Platform.h"
-#if PLATFORM == DEFAULT_PLATFORM
+#include "../Platform.h"
+#if PLATFORM == KEYPAD_PLATFORM
+
+const byte ROWS = 8;
+const byte COLUMNS = 3;
+
+const byte ROW_PINS[ROWS] = {2, 5, 10, 12, 14, 15, 16, 17};
+const byte COLUMN_PINS[COLUMNS] = {1, 6, 11};
 
 class Platform : public PlatformAbstract {
    public:
@@ -14,10 +20,16 @@ class Platform : public PlatformAbstract {
     void receiveBodyControlCommand(const BodyControlCommandFrame &commandFrame) override;
     void receiveDriveTrainControlCommand(const DriveTrainControlCommandFrame &commandFrame) override;
    private:
-    ClimateControlCommandFrame m_climateControlFrame;
-    CustomCommandFrame m_customCommandControlFrame;
-    BodyControlCommandFrame m_bodyControlCommandFrame;
-    DriveTrainControlCommandFrame m_driveTrainControlCommandFrame;
+
+    uint16_t timerCount = 0;
+    bool gpioState[COLUMNS][ROWS] = {};
+    bool gpioPreviousState[COLUMNS][ROWS] = {};
+
+    bool keyState[COLUMNS][ROWS] = {};
+    bool keyPrevState[COLUMNS][ROWS] = {};
+
+    uint8_t climateControlState = 0;
+    ClimateControlCommandFrame controlFrame;
 };
 
 #endif
